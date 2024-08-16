@@ -1,8 +1,5 @@
 import http from "node:http";
-import { ConfigService } from "./config/config.service.js";
-import { LoggerService } from "./logger/logger.service.js";
 import { Socket } from "./socket/socket.js";
-import { DbService } from "./database/database.service.js";
 
 export class App {
   #logger;
@@ -10,13 +7,15 @@ export class App {
   #portHttp;
   #host;
   #server;
+  #db;
   #socket;
 
-  constructor() {
-    this.#config = new ConfigService();
-    this.#logger = new LoggerService();
+  constructor(logger, db, cfg) {
+    this.#config = cfg;
+    this.#logger = logger;
+    this.#db = db.messages;
 
-    this.#socket = new Socket();
+    this.#socket = new Socket(logger, this.#db);
 
     this.#portHttp = Number(this.#config.get("PORT")) || 3001;
     this.#host = this.#config.get("HOST");
@@ -24,20 +23,25 @@ export class App {
 
   serveHTTP() {
     this.#server = http.createServer((req, res) => {
-      res.writeHead(200, { "Content-Type": "application/json" });
+      if (req.url === "/messages") {
+        if (req.method === "POST") {
+          let body = "";
+          const ctx = this.#socket;
 
-      if (req.method === "POST") {
-        console.dir(req["body"]);
+          req.on("data", function (data) {
+            body += data;
+          });
+          req.on("end", function () {
+            ctx.emit("sendmsg", body);
+            res.writeHead(200, { "Content-Type": "application/json" });
+            res.end(body);
+          });
+        } else if (req.method === "GET") {
+          const messages = this.#db.all();
+          res.writeHead(200, { "Content-Type": "application/json" });
+          res.end(JSON.stringify(messages));
+        }
       }
-
-      const messages = new DbService().messages.getAll();
-
-      if (!messages) res.end(JSON.stringify(messages));
-
-      res.end(JSON.stringify(messages));
-
-      // res.writeHead(200, { "Content-Type": "application/json" });
-      // res.end(JSON.stringify("ok"));
     });
     this.#server.listen(this.#portHttp, this.#host);
     this.#logger.log(

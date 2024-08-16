@@ -10,17 +10,20 @@ class MessagesDb {
     this.#messages = new Map();
   }
 
-  getAll() {
-    const msgs = [];
+  get size() {
+    return this.#messages.size;
+  }
 
+  all() {
+    const messages = [];
     this.#messages.forEach((v, k) => {
-      msgs.push({
+      messages.push({
         id: k,
         msg: v,
       });
     });
 
-    return msgs;
+    return messages;
   }
 
   add(k, v) {

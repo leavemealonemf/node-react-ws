@@ -1,7 +1,9 @@
 import { config } from "dotenv";
-import { LoggerService } from "../logger/logger.service";
+import { LoggerService } from "../logger/logger.service.js";
 
 export class ConfigService {
+  #config;
+
   #logger;
   constructor() {
     this.#logger = new LoggerService();
@@ -10,11 +12,11 @@ export class ConfigService {
       this.#logger.error("[ConfigService] Не удалось прочитать файл .env");
     } else {
       this.#logger.log("[ConfigService] Конфиг .env загружен");
-      this.config = result.parsed;
+      this.#config = result.parsed;
     }
   }
 
   get(key) {
-    return this.config[key];
+    return this.#config[key];
   }
 }

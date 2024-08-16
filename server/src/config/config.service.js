@@ -3,8 +3,8 @@ import { LoggerService } from "../logger/logger.service.js";
 
 export class ConfigService {
   #config;
-
   #logger;
+
   constructor() {
     this.#logger = new LoggerService();
     const result = config();

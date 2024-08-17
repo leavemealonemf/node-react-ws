@@ -22,6 +22,11 @@ export class App {
   }
 
   serveHTTP() {
+    const headers = {
+      "Access-Control-Allow-Origin": "*",
+      "Content-Type": "application/json",
+    };
+
     this.#server = http.createServer((req, res) => {
       if (req.url === "/messages") {
         if (req.method === "POST") {
@@ -33,12 +38,12 @@ export class App {
           });
           req.on("end", function () {
             ctx.emit("sendmsg", body);
-            res.writeHead(200, { "Content-Type": "application/json" });
+            res.writeHead(200, headers);
             res.end(body);
           });
         } else if (req.method === "GET") {
           const messages = this.#db.all();
-          res.writeHead(200, { "Content-Type": "application/json" });
+          res.writeHead(200, headers);
           res.end(JSON.stringify(messages));
         }
       }

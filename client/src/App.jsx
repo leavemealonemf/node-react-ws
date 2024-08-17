@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-import Message from "./components/messages/Message";
 import { useConnectSocket } from "./hooks/useSocketConnect";
 
 function App() {
@@ -10,16 +9,40 @@ function App() {
   const [messagesQuery, setMessagesQuery] = useState([]);
 
   useEffect(() => {
+    (async () => {
+      const res = await fetch("http://localhost:3001/messages");
+
+      if (!res.ok) throw new Error("Failed fetch messages");
+
+      const data = await res.json();
+      setMessagesQuery(
+        data.map((x) => {
+          const msg = JSON.parse(x.msg);
+          return msg;
+        })
+      );
+    })();
+  }, []);
+
+  useEffect(() => {
     setMessagesQuery((prev) => {
       return [message, ...prev];
     });
   }, [message]);
 
-  const sendMessage = (e) => {
-    e.preventDefault();
-  };
+  const sendMessage = async () => {
+    if (!newMessage.length) return;
 
-  console.log(messagesQuery);
+    const res = await fetch("http://localhost:3001/messages", {
+      method: "POST",
+      body: JSON.stringify({
+        msg: newMessage,
+      }),
+    });
+
+    if (!res.ok) throw new Error("Failed to push message");
+    setNewMessage("");
+  };
 
   return (
     <div>
@@ -28,7 +51,9 @@ function App() {
       {messagesQuery
         .filter((msg) => typeof msg !== "string")
         .map((msg, index) => (
-          <Message key={index} message={msg} />
+          <div key={index} style={{ display: "flex" }}>
+            <span>{msg.msg}</span>
+          </div>
         ))}
 
       <div>
@@ -37,7 +62,7 @@ function App() {
           onChange={(e) => setNewMessage(e.target.value)}
         />
       </div>
-      <button onClick={(e) => sendMessage(e)}>Отправить</button>
+      <button onClick={() => sendMessage()}>Отправить</button>
     </div>
   );
 }
